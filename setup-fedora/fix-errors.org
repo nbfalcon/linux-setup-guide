@@ -1,0 +1,117 @@
+#+title: Fix Errors
+* When logging in via tty: "Change directory: /home/<user>" permission denied
+** Error Message (tty)
+#+begin_quote
+-- user: /home/user: change directory failed: Permission denied
+Logging in with /home="/".
+#+end_quote
+** Cause
+selinux contexts for /home and /home/<user> are wrong.
+** Fix (relabel home, home/user, and everything in the users home dir)
+#+begin_src shell
+sudo restorecon /home/*/*
+#+end_src
+* How to reinstall Grub from a Live ISO (if Linux is already installed)
+** Mount the existing Linux root partition
+It is important to mount the root partition directly; when using subvolumes,
+only mount the root subvolume (-o subvol=@...). Otherwise grub-install gets
+confused.
+#+begin_src shell
+mkdir /tmp/mnt
+cd /tmp/
+sudo mount /dev/nvme... mnt
+#+end_src
+** Setup chroot
+#+begin_src shell
+# tmp is so that the root's /tmp directory won't be cluttered; /tmp is tmpfs on a Live ISO.
+for dir in dev sys run proc tmp; do
+    sudo mount --bind /$dir mnt/$dir
+done
+sudo mkdir mnt/boot/efi
+sudo mount --bind /dev/<efi partition> mnt/boot/efi
+
+sudo chroot mnt
+#+end_src
+** grub-install
+We now have a working Linux chroot (including sys, dev, etc.).
+
+#+begin_src shell
+sudo grub2-install
+sudo grub2-mkconfig -o /boot/grub/grub2.cfg
+#+end_src
+** Make grub find /boot directory
+Check ~/boot/efi/EFI/<distro name, e.g. fedora>~ (in chroot). It should look
+like this (~@fedora~ is the btrfs subvolume; it could be called ~@/~ or
+~@ubuntu~, etc.):
+#+begin_src shell
+search --no-floppy --fs-uuid --set=dev UUID_OF_ROOT_PARTITION
+set prefix=($dev)/@fedora/boot/grub2 # btrfs
+set prefix=($dev)/boot/grub2 # or: non-btrfs (e.g. ext4)
+
+export $prefix
+configfile $prefix/grub.cfg
+#+end_src
+* Grub: no "Linux" menu entries
+** Error
+- Grub is installed, but there is no "Linux" option in the boot menu
+** Cause 1
+Modern fedora uses "BLS" (BootLoaderSpec). Menu entries for linux are stored in
+the ~/boot/loader/entries/~ directory. If it is empty, Linux cannot be booted
+from Grub.
+
+Also, BLS should be enabled (~/etc/default/grub~):
+#+begin_src conf
+...
+GRUB_ENABLE_BLSCFG=true
+...
+#+end_src
+** Cause 2: the grubenv file was moved ("manual messing with bootloader")
+- In this case, open the command-line and run: "load_env ACTUAL_PATH_TO_GRUBENV"
+- If there is no environment:
+#+begin_src shell
+set blsdir /boot/loader/entries
+blscfg
+#+end_src
+** Fix
+We can regenerate the entries directory (kernel updates should do that
+automatically from then on).
+#+begin_src shell
+sudo grub2-switch-to-blscfg
+#+end_src
+* Grub: "sparse files are unsupported" error
+** Error
+Before boot, a non-fatal error may be printed along the lines of:
+#+begin_quote
+GRUB error: sparse file not allowed
+#+end_quote
+Pressing any key will continue boot. This will not have any effect on the
+running system.
+
+Furthermore, ~GRUB_SAVEDEFAULT~ will not work.
+** Cause
+- ~GRUB_SAVEDEFAULT~ is enabled
+- The ~/boot~ directory (usually part of the root partition) is on a filesystem
+  that grub cannot write, for example btrfs.
+
+GRUB_SAVEDEFAULT will cause a ~load_env/save_env~ call to be generated
+~/etc/grub.d/00_header~. ~save_env~ will write the [[https://www.gnu.org/software/grub/manual/grub/html_node/Environment-block.html][Environment block]] to a file
+on the boot partition by default (~/boot/grub/grubenv~). This is not possible
+for BTRFS, for example, causing the "sparse file not allowed error" (this is
+probably because the GRUB cannot allocate a "non-sparse" file on BTRFS).
+
+GRUB stores the environment to ~$config_directory/grubenv~ yb default (see [[https://www.gnu.org/software/grub/manual/grub/grub.html#config_005fdirectory][GNU
+GRUB Manual 2.06]]). ~configfile~ (executed in ~/boot/efi/EFI/fedora/grub.cfg~
+by default).
+** (untested) Solution 1: use [[https://github.com/rhboot/grub2/blob/34e3dbc8ecc86e162c36f80e6a0fbc6000dc1801/grub-core/commands/efi/env.c#L162][efi-load-env/efi-export-env]]
+- efi-load-env will store the grubenv block into an EFI variable (NVRAM/EEPROM
+  chip internal to the system).
+- For this, modify ~/etc/grub.d/10_linux~
+** (untested) Solution 2
+** Attemped non-solution: move grubenv to /boot/efi
+This way, grub should detect it automatically and save the grubenv to the ESP
+instead.
+
+No it doesn't. It only looks in ~/boot/grub2/grubenv~.
+#+begin_src shell
+sudo mv /boot/grub2/grubenv /boot/efi/EFI/fedora/
+#+end_src
