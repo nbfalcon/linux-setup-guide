@@ -1,5 +1,7 @@
 #+title: Fedora
 * Enable hibernation
+Note that this may be unnecessary! The fedora install on my workstation had
+working swap/hibernate OOTB (using systemd ~swap.target~).
 ** Find swap partition
 #+NAME: swap_uuid
 #+begin_src shell :results output
@@ -38,6 +40,12 @@ sudo dnf install \
     https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
 sudo dnf update -y
 #+end_src
+** Install FFmpeg with nonfree codecs so that firefox can play video
+Note that we have to install this instead of the previously installed "free"
+ffmpeg, so we need ~--allowerasing~.
+#+begin_src shell
+sudo dnf install --allowerasing ffmpeg
+#+end_src
 ** "Enable AppStream"
 #+begin_src shell
 sudo dnf group update core
@@ -63,7 +71,7 @@ sudo dnf install keepassxc emacs neovim ripgrep graphviz
 #+end_src
 * Install useful apps
 #+begin_src shell
-sudo dnf install kgraphviewer cantor maxima maxima-runtime-sbcl thunderbird okular
+sudo dnf install kgraphviewer cantor maxima maxima-runtime-sbcl thunderbird okular filelight
 #+end_src
 * Install LaTeX :optional:
 #+begin_src shell

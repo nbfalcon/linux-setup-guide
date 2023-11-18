@@ -115,3 +115,65 @@ No it doesn't. It only looks in ~/boot/grub2/grubenv~.
 #+begin_src shell
 sudo mv /boot/grub2/grubenv /boot/efi/EFI/fedora/
 #+end_src
+* How to load a recovery USB stick from GRUB?
+#+begin_src shell
+Grub> ls
+(hd0, gpt1) (hd1, gpt1)...
+Grub> set root=(hd0,gpt1)
+Grub> ls /efi/boot/
+grubx64.efi
+
+Comment: If the directory you just set as root does not contain
+/EFI/<distroname>, it is not the installation stick. Try a different one from
+the ls output above.
+
+Grub> chainloader /efi/boot/grubx64.efi
+
+This command does nothing at first. It just _configures_ what will be run next.
+
+Grub> boot
+
+Now the new grub should run, and system installation can commence.
+#+end_src
+* "My BIOS doesn't see my installed OS (Windows or Linux)"
+The fix is via the ~efibootmgr~ command (similar to ~bcdedit~, but at UEFI not
+bootloader level)
+** Symptomps
+- The BIOS doesn't see already and correctly installed operating systems
+- The BIOS doesn't see Windows even after a reinstall and bcdboot hackery, but
+  the EFI system partition seems healthy (i.e. has all the right fills in
+  ~\EFI\Microsoft~, ~\EFI\fedora~)
+- The BIOS contains invalid/outdated entries from previous distro-hopping
+  installs
+** List entries (including invalid)
+#+begin_src shell
+$ efibootmgr
+Boot0000* Windows Boot Manager  HD(1,GPT,49...,0x40,0x82000)/File(\EFI\Microsoft\Boot\bootmgfw.efi)RC
+Boot0001* Fedora        HD(1,GPT,49...,0x40,0x82000)/File(\EFI\fedora\shim.efi) File(.䍒)
+Boot0002* Fedora        HD(1,GPT,49...,0x40,0x82000)/File(\EFI\fedora\shimx64.efi)
+...
+#+end_src
+- ~...~ is some very long UUID, redacted for my privacy. (I don't know if this
+  even has security implications)
+- Note the ~*~ lines. These are ~active~, i.e. will show up in the BIOS boot
+  selection menu.
+- There should probably not be "MBR" entries. Recreate them properly (see below)
+  and delete them afterwards
+** Delete an entry
+Delete boot entry ~Boot0001~ (note that you don't specify the prefix for the -b
+option. -B is confusingly the delete option! Probably because -d specifies a
+device)
+#+begin_src shell
+$ efibootmgr -b 0001 -B
+#+end_src
+** Create an entry (for example, Windows)
+- /dev/sda below is the drive with the EFI System Partition (could be nvme as
+  well). The partition to select here is probably "2", because "1" is the
+  Windows recovery folder.
+- Note the Windows-style paths (with backslashes)
+- Currently, there is no way to rename boot entries
+#+begin_src shell
+$ efibootmgr -d /dev/sda2 -L 'Windows Boot Manager' -l '\EFI\Microsoft\bootmgfw.efi' -c # Windows
+$ efibootmgr -d /dev/sda2 -L 'Fedora' -l '\EFI\fedora\shimx64.efi' -c # Fedora
+$ efibootmgr -c # Create a "Linux" boot entry for the current system (may only work on Fedora)
+#+end_src
