@@ -1,4 +1,31 @@
 #+title: Fix Errors
+* How to install Fedora on an existing root or ~/home~ partition ("You must create a new file system on the root device.")
+1. mount it from gnome disks (click the play icon)
+2. cd into it, and delete all non-home folders (i.e. delete the old installation)
+   #+begin_src shell
+$ cd /media/liveuser/_home
+$ rm -rf bin/ sbin/ ... # important: do not delete home!!!
+   #+end_src
+3. Move the home folder to a different name, like ~oldhome~. I don't know if it
+   would be overwritten, and it is best to take configs like .profile from the
+   new installation anyway and copy over the old user's files.
+4. Patch liveinst to accept an existing root partition (if you select the
+   existing root partition as the target, liveinst will complain that it isn't
+   formatted/new; this is precisely what we don't want to, though, and the error
+   is irrelevant. liveinst won't format the partition if you don't configure it
+   to, at least on Fedora 39). ~pyanaconda~ is the installer.
+
+   Credits go to: [[https://discussion.fedoraproject.org/t/reinstall-fedora-without-formatting-the-disk-keeping-data/67701/13][Reinstall Fedora without formatting the disk (keeping data) - #13 by udavidso...]]
+   #+begin_src shell
+cd /usr/lib64/python3*/site-packages/pyanaconda/
+grep -R 'create a new file system on the root device'
+vi <filename>
+   #+end_src
+   Now you can use vi to patch out that if condition. It is simply wrong.
+5. Now start liveinst, and select your existing root partition as the ~/~
+   mountpoint. *Important*: do *not* select format! liveinst will now accept
+   this without question, since we just removed the check.
+6. Now you can proceed with the installation.
 * When logging in via tty: "Change directory: /home/<user>" permission denied
 ** Error Message (tty)
 #+begin_quote
@@ -148,6 +175,9 @@ bootloader level)
 ** List entries (including invalid)
 #+begin_src shell
 $ efibootmgr
+BootCurrent: 0001
+Timeout: 0 seconds
+BootOrder: 0001,3001,2001,2002,0000,2004
 Boot0000* Windows Boot Manager  HD(1,GPT,49...,0x40,0x82000)/File(\EFI\Microsoft\Boot\bootmgfw.efi)RC
 Boot0001* Fedora        HD(1,GPT,49...,0x40,0x82000)/File(\EFI\fedora\shim.efi) File(.䍒)
 Boot0002* Fedora        HD(1,GPT,49...,0x40,0x82000)/File(\EFI\fedora\shimx64.efi)
@@ -159,6 +189,9 @@ Boot0002* Fedora        HD(1,GPT,49...,0x40,0x82000)/File(\EFI\fedora\shimx64.ef
   selection menu.
 - There should probably not be "MBR" entries. Recreate them properly (see below)
   and delete them afterwards
+- Note the ~BootOrder:~ line. It is the list of entries to try booting, in order
+  (this is usually what you would configure in the BIOS "GUI"). ~BootCurrent:~
+  is the id of the currently booted entry.
 ** Delete an entry
 Delete boot entry ~Boot0001~ (note that you don't specify the prefix for the -b
 option. -B is confusingly the delete option! Probably because -d specifies a
@@ -176,4 +209,9 @@ $ efibootmgr -b 0001 -B
 $ efibootmgr -d /dev/sda2 -L 'Windows Boot Manager' -l '\EFI\Microsoft\bootmgfw.efi' -c # Windows
 $ efibootmgr -d /dev/sda2 -L 'Fedora' -l '\EFI\fedora\shimx64.efi' -c # Fedora
 $ efibootmgr -c # Create a "Linux" boot entry for the current system (may only work on Fedora)
+#+end_src
+** Configure boot order
+Configure the boot order (instead of going through BIOS GUI)
+#+begin_src shell
+$ efibootmgr -o 0001,0002
 #+end_src

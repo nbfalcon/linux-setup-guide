@@ -1,16 +1,38 @@
-#+title: Fedora
-* Enable hibernation
+#+title: Fedora post-installation setup for a fully working system
+* Enable hibernation :optional:
 Note that this may be unnecessary! The fedora install on my workstation had
 working swap/hibernate OOTB (using systemd ~swap.target~).
-** Find swap partition
+** Check if everything is already configured (this won't be the case out of the box)
+*Important*: check the following steps only after rebooting! Things may work
+ only on the first boot.
+*** Do we already have working hibernation? Then don't do anything else and skip the entire [[Enable hibernation]] step.
+#+begin_src shell
+cat /sys/power/resume
+#+end_src
+
+If this is not ~0:0~ but has actual, valid numbers (this would be a UNIX device
+~major:minor~ identifier, see ~Linux Device Drivers, third edition~),
+hibernation should work. Try hibernating and see if the system resumes properly.
+Otherwise, proceed with the steps below.
+*** Do we already have a working swap partition? Then skip the [[Swap partitions]] step below, and continue to dracut.
+#+begin_src shell
+$ sudo swapon
+NAME           TYPE      SIZE USED PRIO
+/dev/nvme0n1p6 partition   8G 1.5G   -2
+/dev/zram0     partition 7.6G 7.6G  100
+#+end_src
+Is there a line other than ~/dev/zram0~ as large as your RAM? Then you are done
+and don't need to add anything to fstab.
+** Swap partitions
+*** Find the swap partition
 #+NAME: swap_uuid
 #+begin_src shell :results output
 swap_partition=($(sudo lsblk --list --noheadings -o NAME,UUID,FSTYPE | awk '$3 == "swap" { print $1, $2 }'))
 echo "Setting up swap/hibernate on ${swap_partition[0]} UUID=${swap_partition[1]}" >&2
 echo ${swap_partition[1]}
 #+end_src
-** Add to ~/etc/fstab~
-#+BEGIN_SRC shell :var SWAP_UUID=swap_uuid
+*** Add to ~/etc/fstab~
+#+begin_src shell :var SWAP_UUID=swap_uuid
 # Check if /etc/fstab contains a line with UUID=$SWAP_UUID
 if grep -q "UUID=$SWAP_UUID" /etc/fstab; then
     echo "UUID=$SWAP_UUID entry already exists in /etc/fstab."
@@ -19,6 +41,11 @@ else
     echo "UUID=$SWAP_UUID none swap sw 0 0" | sudo tee -a /etc/fstab
     echo "Added UUID=$SWAP_UUID entry to /etc/fstab."
 fi
+#+end_src
+** ~/etc/default/grub~
+This file should contain a ~RESUME=UUID=...~ part in the ~GRUB_CMDLINE_LINUX~
+option (should be this way ootb). It should contain the UUID determined in step
+[[Find the swap partition]].
 ** Add resume module to dracut
 #+begin_src shell
 sudo tee /etc/dracut.conf.d/10_resume.conf <<EOF
@@ -91,3 +118,41 @@ echo "DESKTOP=KDE" | sudo tee /etc/sysconfig/desktop
 sudo systemctl disable gdm
 sudo systemctl enable sddm
 #+end_src
+* Enable hybrid-sleep/automatic sleep+hibernate in KDE :norestart:
+** systemd
+Edit ~/etc/systemd/sleep.conf~, and change the following entries (the ones not
+commented out)
+
+Note that you can configure the ~HibernateMode~ and ~HibernateSleepMode~ to be
+shutdown, if your BIOS implements them in and undesirable way (i.e. does not
+_fully_ turn off the computer, and allows keyboard wakeup)
+#+begin_src conf
+[Sleep]
+#AllowSuspend=yes
+#AllowHibernation=yes
+AllowSuspendThenHibernate=yes
+#AllowHybridSleep=yes
+#SuspendMode=
+#SuspendState=mem standby freeze
+#HibernateMode=platform shutdown # Note: possibly select shutdown here
+#HibernateState=disk
+#HybridSleepMode=suspend platform shutdown
+#HybridSleepState=disk
+HibernateDelaySec=300 # 1800 # = 30min * 60 might be more appropriate on a desktop workstation
+#SuspendEstimationSec=60min
+#+end_src
+
+Reload the configuration (no reboot required)
+#+begin_src shell
+sudo systemctl daemon-reload
+#+end_src
+** KDE power manager auto-sleep/hibernate
+- KDE has this feature under ~Energy Saving -> Suspend session -> sleep~
+  + ~-> automatically after 10min~
+  + ~-> While asleep, hibernate...~
+The system will then enter a "sleep" state, from which it will then hibernate
+automatically after ~HibernateDelaySec~ seconds (see above.)
+
+Note that you can also check the option to have the PC hibernate if the power
+button is checked here (makes sense on a workstation, since it isn't portable),
+making power-off quick.
