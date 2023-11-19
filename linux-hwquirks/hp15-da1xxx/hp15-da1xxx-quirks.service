@@ -1,0 +1,9 @@
+[Unit]
+Description=HP Laptop quirks for model 15-da1xxx
+After=network.target
+
+[Service]
+ExecStart=/usr/local/libexec/hp-laptop-15-da1xxx-quirks
+
+[Install]
+WantedBy=default.target

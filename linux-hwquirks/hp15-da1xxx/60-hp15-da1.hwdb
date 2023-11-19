@@ -1,0 +1,7 @@
+# HP Laptop 15-da1xxx
+evdev:atkbd:dmi:bvn*:bvr*:svnHP*:pnHPLaptop15-da1*:pvr*
+ KEYBOARD_KEY_d7=unknown
+ KEYBOARD_KEY_d8=unknown
+ KEYBOARD_KEY_ab=brightnessup                           # FIXME: brightness up and down map to the same key!
+# KEYBOARD_KEY_db=help                                 # help is "db", "desktops" (f4) is 19 followed by db
+

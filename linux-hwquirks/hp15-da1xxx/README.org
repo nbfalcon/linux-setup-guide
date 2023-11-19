@@ -1,0 +1,11 @@
+#+title: Readme
+* Enable the LID Switch for HP Laptop 15-da1xxx
+#+begin_src shell
+$ make
+$ sudo make install
+#+end_src
+
+To uninstall:
+#+begin_src shell
+$ sudo make uninstall
+#+end_src

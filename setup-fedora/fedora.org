@@ -156,3 +156,7 @@ automatically after ~HibernateDelaySec~ seconds (see above.)
 Note that you can also check the option to have the PC hibernate if the power
 button is checked here (makes sense on a workstation, since it isn't portable),
 making power-off quick.
+* QT Development :optional:wsl2:
+#+begin_src shell
+sudo dnf install clang-tools-extra qtcreator cmake 'qt6-*-devel'
+#+end_src
