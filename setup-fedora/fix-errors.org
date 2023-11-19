@@ -215,3 +215,10 @@ Configure the boot order (instead of going through BIOS GUI)
 #+begin_src shell
 $ efibootmgr -o 0001,0002
 #+end_src
+* Kernel lockdown: hibernation is disabled
+** Cause
+- Secure Boot does not allow hibernating to an unencrypted swap partition, as
+  that is very much insecure
+** Fix
+- Encrypt the swap partition (i.e. a full-disk-encrypted Linux)
+- Or: Disable secure boot in the Bios
