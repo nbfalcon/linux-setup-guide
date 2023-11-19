@@ -1,6 +1,5 @@
 [Unit]
-Description=HP Laptop quirks for model 15-da1xxx
-After=network.target
+Description=HP Laptop hardware-enablement quirks for model 15-da1xxx
 
 [Service]
 ExecStart=/usr/local/libexec/hp-laptop-15-da1xxx-quirks

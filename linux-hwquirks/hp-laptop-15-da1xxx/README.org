@@ -3,6 +3,8 @@
 #+begin_src shell
 $ make
 $ sudo make install
+$ sudo udevadm trigger # reload the changes; the lid switch should work from now on
+# alternatively, you can also reboot (but you don't have to)
 #+end_src
 
 To uninstall:
