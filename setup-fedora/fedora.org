@@ -119,7 +119,7 @@ sudo systemctl disable gdm
 sudo systemctl enable sddm
 #+end_src
 * Enable hybrid-sleep/automatic sleep+hibernate in KDE :norestart:
-** systemd
+** systemd: ~/etc/systemd/sleep.conf~
 Edit ~/etc/systemd/sleep.conf~, and change the following entries (the ones not
 commented out)
 
@@ -134,7 +134,8 @@ AllowSuspendThenHibernate=yes
 #AllowHybridSleep=yes
 #SuspendMode=
 #SuspendState=mem standby freeze
-#HibernateMode=platform shutdown # Note: possibly select shutdown here
+#HibernateMode=platform shutdown
+# Note: possibly select shutdown here
 #HibernateState=disk
 #HybridSleepMode=suspend platform shutdown
 #HybridSleepState=disk
@@ -145,6 +146,38 @@ HibernateDelaySec=300 # 1800 # = 30min * 60 might be more appropriate on a deskt
 Reload the configuration (no reboot required)
 #+begin_src shell
 sudo systemctl daemon-reload
+#+end_src
+** systemd: ~/etc/systemd/logind.conf~
+Edit the following uncommented lines. The LidSwitchIgnoreInhibited=no line is
+important!
+#+begin_src conf
+[Login]
+#NAutoVTs=6
+#ReserveVT=6
+#KillUserProcesses=no
+#KillOnlyUsers=
+#KillExcludeUsers=root
+#InhibitDelayMaxSec=5
+#UserStopDelaySec=10
+#HandlePowerKey=poweroff
+#HandlePowerKeyLongPress=ignore
+#HandleRebootKey=reboot
+#HandleRebootKeyLongPress=poweroff
+#HandleSuspendKey=suspend
+#HandleSuspendKeyLongPress=hibernate
+#HandleHibernateKey=hibernate
+#HandleHibernateKeyLongPress=ignore
+# The following is only relevant on the login screen without a desktop session, since KDE inhibits it
+HandleLidSwitch=suspend-then-hibernate
+HandleLidSwitchExternalPower=suspend-then-hibernate
+HandleLidSwitchDocked=ignore
+#PowerKeyIgnoreInhibited=no
+#SuspendKeyIgnoreInhibited=no
+#HibernateKeyIgnoreInhibited=no
+LidSwitchIgnoreInhibited=no
+#RebootKeyIgnoreInhibited=no
+#HoldoffTimeoutSec=30s
+#IdleAction=ignore
 #+end_src
 ** KDE power manager auto-sleep/hibernate
 - KDE has this feature under ~Energy Saving -> Suspend session -> sleep~
