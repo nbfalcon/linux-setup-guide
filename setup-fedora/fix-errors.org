@@ -222,3 +222,11 @@ $ efibootmgr -o 0001,0002
 ** Fix
 - Encrypt the swap partition (i.e. a full-disk-encrypted Linux)
 - Or: Disable secure boot in the Bios
+* GRUB2: ~/EndEntire~ is printed (just _mildly_ annoying), but Windows still boots completely fine
+- Source: some reddit post (I lost the link)
+** Cause (not fully investigated)
+- Something something UEFI entry type enum -> printf
+** Fix: edit ~/etc/default/grub~ (also ~grub2-mkconfig -o /boot/grub2/grub.cfg~)
+#+begin_src conf
+GRUB_TERMINAL_OUTPUT="gfxterm"
+#+end_src
