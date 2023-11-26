@@ -230,3 +230,8 @@ $ efibootmgr -o 0001,0002
 #+begin_src conf
 GRUB_TERMINAL_OUTPUT="gfxterm"
 #+end_src
+* Cannot open UART/USB ttys (permission denied) :setup:
+Your user needes to be added to the ~dialout~ group.
+#+begin_src shell
+sudo usermod -aG dialout $USER
+#+end_src

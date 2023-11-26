@@ -1,0 +1,18 @@
+* How to install Wireshark?
+1. Install wireshark
+2. Allow the current user to capture from network interfaces
+#+begin_src shell
+sudo dnf install wireshark
+sudo usermod -aG wireshark $USER
+#+end_src
+* How to install DOOM Emacs?
+1. Clone it into ~/.config/emacs/
+2. ~cd ~/.config/emacs/~
+3. ~./bin/doom install~
+4. Start emacs, then run the following two commands:
+   1. ~M-x all-the-icons-install~
+   2. ~M-x nerd-fonts-install~
+5. Finally, restart Emacs. Now fonts should no longer be broken.
+
+Errors like "doom-native-comp-deferred*: symbol not found" are fixed on the
+~master~ branch. Clone that!

@@ -92,14 +92,25 @@ sudo dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:phracek:Py
 #+begin_src shell
 sudo dnf install akmod-nvidia vulkan xorg-x11-drv-nvidia-cuda nvidia-vaapi-driver libva-utils vdpauinfo
 #+end_src
-* Install basic packages
+* Install basic apps
 #+begin_src shell
-sudo dnf install keepassxc emacs neovim ripgrep graphviz
+sudo dnf install keepassxc emacs neovim
 #+end_src
 * Install useful apps
 #+begin_src shell
-sudo dnf install kgraphviewer cantor maxima maxima-runtime-sbcl thunderbird okular filelight
+sudo dnf install ksysguard kgraphviewer cantor maxima maxima-runtime-sbcl thunderbird okular filelight
 #+end_src
+* Java Development
+Since Linux is most useful for software devs, and Java is very common on Linux,
+add that as well.
+#+begin_src shell
+sudo dnf install java-17-openjdk-devel
+#+end_src
+* Install useful apps and dependencies (CLI)
+#+begin_src shell
+sudo dnf install htop fd-find ripgrep ripgrep graphviz
+#+end_src
+Note that DOOM Emacs depends on fd-find and ripgrep.
 * Install LaTeX :optional:
 #+begin_src shell
 sudo dnf install texlive-scheme-full
@@ -192,4 +203,9 @@ making power-off quick.
 * QT Development :optional:wsl2:
 #+begin_src shell
 sudo dnf install clang-tools-extra qtcreator cmake 'qt6-*-devel'
+#+end_src
+* Cannot open UART/USB ttys (permission denied) :fixErrors:
+Your user needes to be added to the ~dialout~ group.
+#+begin_src shell
+sudo usermod -aG dialout $USER
 #+end_src
