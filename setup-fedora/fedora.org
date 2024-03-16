@@ -98,7 +98,7 @@ sudo dnf install keepassxc emacs neovim ripgrep graphviz
 #+end_src
 * Install useful apps
 #+begin_src shell
-sudo dnf install kgraphviewer cantor maxima maxima-runtime-sbcl thunderbird okular filelight
+sudo dnf install vlc gwenview kgraphviewer cantor maxima maxima-runtime-sbcl thunderbird okular filelight
 #+end_src
 * Install LaTeX :optional:
 #+begin_src shell
@@ -191,5 +191,5 @@ button is checked here (makes sense on a workstation, since it isn't portable),
 making power-off quick.
 * QT Development :optional:wsl2:
 #+begin_src shell
-sudo dnf install clang-tools-extra qtcreator cmake 'qt6-*-devel'
+sudo dnf install clang-tools-extra qtcreator cmake 'qt6-*-devel' ninja-build
 #+end_src
