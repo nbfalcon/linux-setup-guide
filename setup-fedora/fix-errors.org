@@ -200,14 +200,40 @@ device)
 $ efibootmgr -b 0001 -B
 #+end_src
 ** Create an entry (for example, Windows)
-- /dev/sda below is the drive with the EFI System Partition (could be nvme as
-  well). The partition to select here is probably "2", because "1" is the
-  Windows recovery folder.
+- /dev/sda below is the drive with the EFI System Partition ("ESP") (could be
+  nvme as well, but be careful, since your BIOS may not support this! If your
+  laptop came with an NVME drive it will work, but for old workstations this
+  will probably not be case). You can also specify something like ~/dev/sda2~
+  here, but the partition number will be ignored (~/dev/sda2 == /dev/sda~).
+- To specify the actual partition index, use ~--part~. On this system, the first
+  partition is the Recovery, and partition 2 the ESP. But usually, 1 is the ESP
+  (if this is the case, you can omit ~--part~).
+
+  You can determine the partition you need to specify using ~sudo df
+  /boot/efi/EFI/~
+
+  This option will result in a line like ~HD(2, GPT, ...)~ (where ~2~ is the
+  ~--part~ specified).
 - Note the Windows-style paths (with backslashes)
-- Currently, there is no way to rename boot entries
+- Currently, there is no way to rename boot entries. You have to delete and
+  manually recreate them.
+
+IMPORTANT: further caveats
+- Your BIOS may not support spaces in boot entry names, and silently delete or
+  corrupt such entries. If you notice that each time you reboot, your newly
+  created entry is gone or turns into some weird string, try avoiding spaces in
+  the ~-L~ option.
+- (For troubleshooting) ~BBS~ is a legacy BIOS partition. If your boot entries
+  get turned into something beginning with ~BBS~ instead of
+  ~HD(1,GPT,PART-UUID)~, try turning off any "legacy" or "BIOS" options in your
+  BIOS GUI.
 #+begin_src shell
-$ efibootmgr -d /dev/sda2 -L 'Windows Boot Manager' -l '\EFI\Microsoft\bootmgfw.efi' -c # Windows
-$ efibootmgr -d /dev/sda2 -L 'Fedora' -l '\EFI\fedora\shimx64.efi' -c # Fedora
+# Windows: use any of these 2 options
+$ efibootmgr -d /dev/sda --part 2 -L 'Windows' -l '\EFI\Microsoft\Boot\bootmgfw.efi' -c # Windows (safest, since no spaces)
+$ efibootmgr -d /dev/sda --part 2 -L 'Windows Boot Manager' -l '\EFI\Microsoft\Boot\bootmgfw.efi' -c # Windows
+
+# Linux: use any of these two options
+$ efibootmgr -d /dev/sda --part 2 -L 'Fedora' -l '\EFI\fedora\shimx64.efi' -c # Fedora
 $ efibootmgr -c # Create a "Linux" boot entry for the current system (may only work on Fedora)
 #+end_src
 ** Configure boot order
